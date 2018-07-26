@@ -3,5 +3,5 @@ from handlers.user_handler import UserRewardsHandler
 
 url_patterns = [
     (r'/rewards', RewardsHandler),
-    (r'/user-rewards', UserRewardsHandler),
+    (r'/user-rewards/([^/]*)', UserRewardsHandler),
 ]

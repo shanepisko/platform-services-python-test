@@ -8,13 +8,17 @@ from tornado.gen import coroutine
 class UserRewardsHandler(tornado.web.RequestHandler):
 
     @coroutine
-    def get(self):
+    def get(self, email=None):
+        print(email)
         client = MongoClient("mongodb", 27017)
         db = client["UserRewards"]
-        user_rewards = list(db.user_rewards.find({}, {"_id": 0}))
+        if email:
+            user_rewards = list(db.user_rewards.find({"email": email}, {"_id": 0}))
+        else:
+            user_rewards = list(db.user_rewards.find({}, {"_id": 0}))
         self.write(json.dumps(user_rewards))
 
-    def post(self):
+    def post(self, updateEmail=None):
         """
             Recieve user order details
             should be a json object containing email, and order_total parameters
@@ -26,15 +30,14 @@ class UserRewardsHandler(tornado.web.RequestHandler):
             Connect to MongoDB
         """
         client = MongoClient("mongodb", 27017)
-        """  """
         db = client["UserRewards"]
-        db = client["Rewards"]
 
         """ Find related user object """
-        user_rewards = list(db.user_rewards.find({"email": email}, {"_id": 0, "email": 1, "points": 1, "tier": 1, "rewardName": 1, "nextTier": 1, "nextRewardName": 1, "tierProgress": 1}).limit(1))[0]
+        user_rewards = list(db.user_rewards.find({"email": email}, {"_id": 0}).limit(1))
+        user_rewards = user_rewards[0] if len(user_rewards) > 0 else None
 
         if not user_rewards:
-                # self.write("NO USER, need create %s %.0f" % (email, order_total))
+                self.write("NO USER, need create %s %.0f" % (email, order_total))
 
                 """ GET REWARD WHICH IS LESS THAN THE ORDER TOTAL sent with request """
                 currRewards, nextRewards = self.get_tier_position(order_total)
@@ -42,15 +45,18 @@ class UserRewardsHandler(tornado.web.RequestHandler):
                 new_user = {
                     "email": email, # Email Address: the customer's email address (ex. "customer01@gmail.com")
                     "points": order_total, # Reward Points: the customer's rewards points (ex. 100)
-                    "tier": currRewards['tier'], # Rewards Tier: the rewards tier the customer has reached (ex. "A")
-                    "rewardName": currRewards['rewardName'], # Reward Tier Name: the name of the rewards tier (ex. "5% off purchase")
+                    "tier": currRewards['tier']  if currRewards else 'Not yet reached tier 1', # Rewards Tier: the rewards tier the customer has reached (ex. "A")
+                    "rewardName": currRewards['rewardName']  if currRewards else 'Not yet reached tier 1', # Reward Tier Name: the name of the rewards tier (ex. "5% off purchase")
                     "nextTier": nextRewards['tier'], # Next Rewards Tier: the next rewards tier the customer can reach (ex. "B")
                     "nextRewardName": nextRewards['rewardName'], # Next Rewards Tier Name: the name of next rewards tier (ex. "10% off purchase")
-                    "tierProgress": self.calc_progress(float(currRewards['points']),float(nextRewards['points']),order_total) # Next Rewards Tier Progress: the percentage the customer is away from reaching the next rewards tier (ex. 0.5)
+                    "tierProgress": self.calc_progress(float(currRewards['points'] if currRewards else 0),float(nextRewards['points']),order_total)  # Next Rewards Tier Progress: the percentage the customer is away from reaching the next rewards tier (ex. 0.5)
                 }
                 # self.write(json.dumps(new_user))
                 insert_res = db.user_rewards.insert_one(new_user)
-                self.write(json.dumps(insert_res))
+                if insert_res:
+                    self.write(json.dumps({"status":"success"}))
+                else:
+                    self.write(json.dumps({"status":"error", "message": "issue your request please review your submission and try again"}))
         else:
                 # self.write(json.dumps(user_rewards))
 
@@ -68,18 +74,22 @@ class UserRewardsHandler(tornado.web.RequestHandler):
                 updated_user = {
                     "email": email, # Email Address: the customer's email address (ex. "customer01@gmail.com")
                     "points": updated_user_points, # Reward Points: the customer's rewards points (ex. 100)
-                    "tier": currRewards['tier'], # Rewards Tier: the rewards tier the customer has reached (ex. "A")
-                    "rewardName": currRewards['rewardName'], # Reward Tier Name: the name of the rewards tier (ex. "5% off purchase")
+                    "tier": currRewards['tier'] if currRewards else 'Not yet reached tier 1', # Rewards Tier: the rewards tier the customer has reached (ex. "A")
+                    "rewardName": currRewards['rewardName'] if currRewards else 'Not yet reached tier 1', # Reward Tier Name: the name of the rewards tier (ex. "5% off purchase")
                     "nextTier": nextRewards['tier'] if nextRewards else 'Reached Reward Limit', # Next Rewards Tier: the next rewards tier the customer can reach (ex. "B")
                     "nextRewardName": nextRewards['rewardName'] if nextRewards else 'Reached Reward Limit', # Next Rewards Tier Name: the name of next rewards tier (ex. "10% off purchase")
-                    "tierProgress": self.calc_progress(float(currRewards['points']),float(nextRewards['points']),updated_user_points) if nextRewards else 'Reached Reward Limit' # Next Rewards Tier Progress: the percentage the customer is away from reaching the next rewards tier (ex. 0.5)
+                    "tierProgress": self.calc_progress(float(currRewards['points'] if currRewards else 0),float(nextRewards['points']),updated_user_points) if nextRewards else 'Reached Reward Limit' # Next Rewards Tier Progress: the percentage the customer is away from reaching the next rewards tier (ex. 0.5)
                 }
                 self.write(json.dumps(updated_user))
 
                 newvalues = { "$set": updated_user }
 
                 update_res = db.user_rewards.update_one(user_rewards, newvalues)
-                print(update_res)
+                # print(update_res)
+                if update_res:
+                    self.write(json.dumps({"status":"success"}))
+                else:
+                    self.write(json.dumps({"status":"error", "message": "issue with update please review your submission and try again"}))
 
 
     def calc_progress(self, curr_tier, next_tier, user_points):
