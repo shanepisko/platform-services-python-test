@@ -1,0 +1,71 @@
+<html>
+<head>
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
+  {% load static %}
+</head>
+<body>
+    <h1>Welcome to the Rewards Dashboard</h1>
+    <div>
+        <h2>Reward Tiers</h2>
+        <table border="1">
+            <tr>
+                <th>Rewards Tier<th>
+                <th>Reward Points</th>
+                <th>Rewards Tier Name</th>
+            </tr>
+            {% for reward in rewards_data %}
+                <tr>
+                    <td>{{ reward.tier }}<td>
+                    <td>{{ reward.points }}</td>
+                    <td>{{ reward.rewardName }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <hr>
+    </div>
+    <div>
+        <h2>Add orders</h2>
+        <form action="http://localhost:7050/user-rewards/" method="post">
+            <label>Enter email address: </label><input type="text" name="email"/><br>
+            <label>Enter order total: </label><input type="number" name="order_total"/><br />
+            <input type="submit" value="Submit Order"/>
+        </form>
+        <hr>
+    </div>
+    <div>
+        <h2>User Rewards</h2>
+        <form>
+            <label>Email address: </label><input type="text"/><input type="button" value="Search"/>
+        </form>
+        <table border="1">
+            <thead>
+            <tr>
+                <th>Email Address</th>
+                <th>Reward Points</th>
+                <th>Reward Tier</th>
+                <th>Reward Tier Name</th>
+                <th>Next Reward Tier</th>
+                <th>Next Reward Tier Name</th>
+                <th>Next Reward Tier Progress</th>
+            </tr>
+            </thead>
+            <tbody>
+
+              {% for user in user_rewards_data %}
+                  <tr>
+                      <td>{{ user.email }}</td>
+                      <td>{{ user.points }}</td>
+                      <td>{{ user.tier }}</td>
+                      <td>{{ user.reardName }}</td>
+                      <td>{{ user.nextTier }}</td>
+                      <td>{{ user.nextRewardName }}</td>
+                      <td>{{ user.tierProgress }}</td>
+                  </tr>
+              {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+    <script src="{% static "app.js" %}"></script>
+</body>
+</html>
