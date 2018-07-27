@@ -11,7 +11,7 @@ import urllib.parse
 
 # This test uses an asynchronous style similar to most async
 # application code.
-class RewardsGetTestCase(AsyncTestCase):
+class _1RewardsGetTestCase(AsyncTestCase):
     def test_http_fetch(self):
         client = AsyncHTTPClient(self.io_loop)
         client.fetch("http://localhost:7050/user-rewards/", self.handle_fetch)
@@ -28,7 +28,7 @@ class RewardsGetTestCase(AsyncTestCase):
         self.assertIsNotNone(result)
         self.stop()
 
-class NewUserTestCase(AsyncTestCase):
+class _2NewUserTestCase(AsyncTestCase):
     data = {'email': 'hondo@gmail.com', 'order_total': 103}
 
     def test_http_post(self):
@@ -44,7 +44,7 @@ class NewUserTestCase(AsyncTestCase):
         self.stop()
 
 
-class UpdateUserTestCase(AsyncTestCase):
+class _3UpdateUserTestCase(AsyncTestCase):
 
     data = {'email': 'hondo@gmail.com', 'order_total': 86}
 
@@ -60,19 +60,19 @@ class UpdateUserTestCase(AsyncTestCase):
         print(result)
         self.stop()
 
-class DeleteTestUserCase(AsyncTestCase):
+class _4DeleteTestUserCase(AsyncTestCase):
 
-        def delete_test_user(self):
-            client = AsyncHTTPClient(self.io_loop)
-            # body = urllib.parse.urlencode(data) #Make it into a post request
-            client.fetch("http://localhost:7050/user-rewards/hondo@gmail.com", self.handle_fetch, method='DELETE', headers=None, body=None)
-            self.wait()
+    def test_delete_user(self):
+        client = AsyncHTTPClient(self.io_loop)
+        # body = urllib.parse.urlencode(data) #Make it into a post request
+        client.fetch("http://localhost:7050/user-rewards/hondo@gmail.com", self.handle_fetch, method='DELETE', headers=None, body=None)
+        self.wait()
 
-        def handle_fetch(self, response):
-            print(response.body)
-            result = json.loads(response.body.decode('utf-8'))
-            self.assertEqual(1, result['n'])
-            self.stop()
+    def handle_fetch(self, response):
+        print(response.body)
+        result = json.loads(response.body.decode('utf-8'))
+        self.assertEqual(1, result['n'])
+        self.stop()
 
 if __name__ == '__main__':
     unittest.main()
