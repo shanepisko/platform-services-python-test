@@ -115,7 +115,8 @@ Vue.component('app-add-order', {
 Vue.component('app-user-rewards', {
   data: function () {
     return {
-      userRewards: []
+      userRewards: [],
+      search: ''
     }
   },
   // mounted () {
@@ -132,32 +133,62 @@ Vue.component('app-user-rewards', {
         });
     }
   },
+  computed:
+  {
+      filteredUsers:function()
+      {
+          var self=this;
+          return this.userRewards.filter(function(user){return user.email.toLowerCase().indexOf(self.search.toLowerCase())>=0;});
+      }
+  },
   template: `
-  <table class="table table-striped" border="1">
-      <thead>
-      <tr>
-          <th>Email Address</th>
-          <th>Reward Points</th>
-          <th>Reward Tier</th>
-          <th>Reward Tier Name</th>
-          <th>Next Reward Tier</th>
-          <th>Next Reward Tier Name</th>
-          <th>Next Reward Tier Progress</th>
-      </tr>
-      </thead>
-      <tbody>
-            <tr v-for="user in userRewards">
-                <td>{{ user.email }}</td>
-                <td>{{ user.points }}</td>
-                <td>{{ user.tier }}</td>
-                <td>{{ user.reardName }}</td>
-                <td>{{ user.nextTier }}</td>
-                <td>{{ user.nextRewardName }}</td>
-                <td>{{ user.tierProgress }}</td>
-            </tr>
-      </tbody>
-  </table>
+    <div>
+      <div class="row">
+        <form class="col-6" autocomplete="off">
+          <input type="text" autocomplete="nope" name="search" placeholder="search user" v-model="search" class="form-control"/>
+        </form>
+      </div>
+      <table class="table table-striped" border="1">
+          <thead>
+          <tr>
+              <th>Email Address</th>
+              <th>Reward Points</th>
+              <th>Reward Tier</th>
+              <th>Reward Tier Name</th>
+              <th>Next Reward Tier</th>
+              <th>Next Reward Tier Name</th>
+              <th>Next Reward Tier Progress</th>
+          </tr>
+          </thead>
+          <tbody>
+                <tr v-for="user in filteredUsers">
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.points }}</td>
+                    <td>{{ user.tier }}</td>
+                    <td>{{ user.rewardName }}</td>
+                    <td>{{ user.nextTier }}</td>
+                    <td>{{ user.nextRewardName }}</td>
+                    <td>{{ user.tierProgress | percentage }}</td>
+                </tr>
+          </tbody>
+      </table>
+    </div>
   `
+});
+
+Vue.filter('percentage', function(value, decimals) {
+  if(!value) {
+    value = 0;
+  }
+
+  if(!decimals) {
+    decimals = 0;
+  }
+
+  value = value * 100;
+  value = Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  value = value + '%';
+  return value;
 });
 
 new Vue({
