@@ -18,6 +18,15 @@ class UserRewardsHandler(tornado.web.RequestHandler):
             user_rewards = list(db.user_rewards.find({}, {"_id": 0}))
         self.write(json.dumps(user_rewards))
 
+    def delete(self, email=None):
+        client = MongoClient("mongodb", 27017)
+        db = client["UserRewards"]
+        if email:
+            user_rewards = db.user_rewards.delete_one({"email": email})
+        else:
+            self.write(json.dumps({"status": 400, "message": "no email specified for request"}))
+
+
     def post(self, updateEmail=None):
         """
             Recieve user order details
@@ -37,7 +46,7 @@ class UserRewardsHandler(tornado.web.RequestHandler):
         user_rewards = user_rewards[0] if len(user_rewards) > 0 else None
 
         if not user_rewards:
-                self.write("NO USER, need create %s %.0f" % (email, order_total))
+                # self.write("NO USER, need create %s %.0f" % (email, order_total))
 
                 """ GET REWARD WHICH IS LESS THAN THE ORDER TOTAL sent with request """
                 currRewards, nextRewards = self.get_tier_position(order_total)
@@ -51,10 +60,11 @@ class UserRewardsHandler(tornado.web.RequestHandler):
                     "nextRewardName": nextRewards['rewardName'], # Next Rewards Tier Name: the name of next rewards tier (ex. "10% off purchase")
                     "tierProgress": self.calc_progress(float(currRewards['points'] if currRewards else 0),float(nextRewards['points']),order_total)  # Next Rewards Tier Progress: the percentage the customer is away from reaching the next rewards tier (ex. 0.5)
                 }
+
                 # self.write(json.dumps(new_user))
-                insert_res = db.user_rewards.insert_one(new_user)
+                insert_res = db.user_rewards.insert_one(new_user).inserted_id
                 if insert_res:
-                    self.write(json.dumps({"status":"success"}))
+                    self.write(json.dumps({"inserted_id": str(insert_res)}))
                 else:
                     self.write(json.dumps({"status":"error", "message": "issue your request please review your submission and try again"}))
         else:
@@ -84,10 +94,9 @@ class UserRewardsHandler(tornado.web.RequestHandler):
 
                 newvalues = { "$set": updated_user }
 
-                update_res = db.user_rewards.update_one(user_rewards, newvalues)
-                # print(update_res)
+                update_res = db.user_rewards.update_one(user_rewards, newvalues).raw_result
                 if update_res:
-                    self.write(json.dumps({"status":"success"}))
+                    print(update_res)
                 else:
                     self.write(json.dumps({"status":"error", "message": "issue with update please review your submission and try again"}))
 
