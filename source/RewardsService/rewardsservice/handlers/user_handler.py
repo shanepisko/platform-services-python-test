@@ -33,8 +33,15 @@ class UserRewardsHandler(tornado.web.RequestHandler):
             Recieve user order details
             should be a json object containing email, and order_total parameters
         """
-        email = self.get_argument('email')
-        order_total = round(float(self.get_argument('order_total')), 0)
+        email = self.get_argument('email', None)
+        order_total = round(float(self.get_argument('order_total', 0)), 0)
+
+        if not email:
+            self.write(json.dumps({"status": "missing value", "message": "an email address is requried for this request"}))
+            self.finish()
+        if order_total == 0:
+            self.write(json.dumps({"status": "missing value", "message": "an order total greater than 0 is requried for this request"}))
+            self.finish()
 
         """
             Connect to MongoDB
