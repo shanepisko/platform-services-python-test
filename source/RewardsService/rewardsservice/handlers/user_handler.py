@@ -22,7 +22,8 @@ class UserRewardsHandler(tornado.web.RequestHandler):
         client = MongoClient("mongodb", 27017)
         db = client["UserRewards"]
         if email:
-            user_rewards = db.user_rewards.delete_one({"email": email})
+            user_rewards = db.user_rewards.delete_one({"email": email}).raw_result
+            self.write(json.dumps(user_rewards))
         else:
             self.write(json.dumps({"status": 400, "message": "no email specified for request"}))
 
