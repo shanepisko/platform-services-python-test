@@ -57,7 +57,7 @@ class _3UpdateUserTestCase(AsyncTestCase):
     def handle_fetch(self, response):
         print(response.body)
         result = json.loads(response.body.decode('utf-8'))
-        print(result)
+        self.assertEqual(self.data['email'], result['email'])
         self.stop()
 
 class _4DeleteTestUserCase(AsyncTestCase):
@@ -72,6 +72,40 @@ class _4DeleteTestUserCase(AsyncTestCase):
         print(response.body)
         result = json.loads(response.body.decode('utf-8'))
         self.assertEqual(1, result['n'])
+        self.stop()
+
+class _5ErrorHandlingTestCase_1(AsyncTestCase):
+
+    data = {'email': 'hondo@gmail.com' }
+
+    def test_http_post(self):
+        client = AsyncHTTPClient(self.io_loop)
+        body = urllib.parse.urlencode(self.data) #Make it into a post request
+        client.fetch("http://localhost:7050/user-rewards/", self.handle_fetch, method='POST', headers=None, body=body)
+        self.wait()
+
+    def handle_fetch(self, response):
+        # print(response.body)
+        print("SHOULD RETURN AN ERROR INDICATING MISSING VALUE")
+        result = json.loads(response.body.decode('utf-8'))
+        self.assertEqual("missing value", result['status'])
+        self.stop()
+
+class _5ErrorHandlingTestCase_2(AsyncTestCase):
+
+    data = {'order_total': 86 }
+
+    def test_http_post(self):
+        client = AsyncHTTPClient(self.io_loop)
+        body = urllib.parse.urlencode(self.data) #Make it into a post request
+        client.fetch("http://localhost:7050/user-rewards/", self.handle_fetch, method='POST', headers=None, body=body)
+        self.wait()
+
+    def handle_fetch(self, response):
+        # print(response.body)
+        print("SHOULD RETURN AN ERROR INDICATING MISSING VALUE")
+        result = json.loads(response.body.decode('utf-8'))
+        self.assertEqual("missing value", result['status'])
         self.stop()
 
 if __name__ == '__main__':
