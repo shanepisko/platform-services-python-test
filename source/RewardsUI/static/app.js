@@ -57,12 +57,14 @@ Vue.component('app-add-order', {
         total: null
       },
       emailWarning: '',
-      totalWarning: ''
+      totalWarning: '',
+      successMessage: false
     }
   },
   methods: {
     handleSubmit(e) {
       e.preventDefault();
+      this.successMessage = false;
       if ( this.order.email == '' ) {
         this.emailWarning = 'Email is required';
       } else {
@@ -85,6 +87,8 @@ Vue.component('app-add-order', {
             if (response.status == 200) {
               console.log('success! calling user rewards load method to reload the list');
               // this.reloadUsers();
+              this.$emit('reload');
+              this.successMessage = true;
             }
           });
       }
@@ -107,6 +111,9 @@ Vue.component('app-add-order', {
           </div>
 
           <button type="submit" class="btn btn-primary form-control">Submit</button>
+          <div v-if="successMessage" class="alert alert-success" role="alert">
+            Order Successfully Added
+          </div>
         </form>
     `
 })
@@ -129,7 +136,7 @@ Vue.component('app-user-rewards', {
           console.log('res', response.data);
           userRewards = response.data;
           this.userRewards = response.data;
-          console.log(this.userRewards)
+          console.log(this.userRewards);
         });
     }
   },
@@ -200,5 +207,5 @@ new Vue({
   },
   mounted () {
     this.loadUsers();
-  }
+  },
 });
